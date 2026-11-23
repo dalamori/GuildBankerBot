@@ -1,7 +1,20 @@
+buildscript {
+	repositories {
+		mavenCentral()
+	}
+
+	dependencies {
+		classpath 'com.mysql:mysql-connector-j:26.10.0'
+		classpath 'org.flywaydb:flyway-mysql:13.13.0'
+	}
+}
+
 plugins {
 	id 'java'
 	id 'org.springframework.boot' version '4.2.0'
 	id 'io.spring.dependency-management' version '1.1.7'
+	id 'org.flywaydb.flyway' version '13.13.0'
+	id 'com.avast.gradle.docker-compose' version '0.17.21'
 }
 
 group = 'com.dalamori.emberline'
@@ -19,6 +32,8 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.flywaydb:flyway-core:13.13.0'
+	implementation 'org.flywaydb:flyway-mysql:13.13.0'
 	implementation 'net.dv8tion:JDA:6.7.0'
 	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-docker-compose'
@@ -29,6 +44,14 @@ dependencies {
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 	testAnnotationProcessor 'org.projectlombok:lombok'
 }
+
+flyway {
+	url = 'jdbc:mysql://localhost:3306/guildbanker'
+	user = 'guildbanker'
+	password = 'ChangeMe'
+	schemas = ['guildbanker']
+}
+
 
 tasks.named('test') {
 	useJUnitPlatform()

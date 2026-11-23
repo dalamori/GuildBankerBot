@@ -3,6 +3,8 @@ package com.dalamori.emberline.guildbanker.models;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -27,9 +29,11 @@ public class Loot {
     @Column(nullable = false, name = "quantity")
     private float quantity;
 
-    @Column(nullable = false, name = "when_created")
+    @CreationTimestamp
+    @Column(nullable = false, name = "when_created", updatable = false)
     private Instant whenCreated;
 
+    @UpdateTimestamp
     @Column(nullable = false, name = "last_seen")
     private Instant lastSeen;
 

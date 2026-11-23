@@ -101,7 +101,7 @@ public class DiscordBotService extends ListenerAdapter {
                         .addOptions(new OptionData(OptionType.STRING, "loot_name_starts_with", "What are you looking for?", true)),
 
                 // CANHELP
-                Commands.slash(config.getDiscordSlashCommandPrefix() + "canhelp", "see what is requested")
+                Commands.slash(config.getDiscordSlashCommandPrefix() + "can_help", "see what is requested")
                         .addOptions(new OptionData(OptionType.STRING, "loot_name_starts_with", "Is there anything specific you can help with?", false)),
 
                 // REPORT
@@ -163,7 +163,7 @@ public class DiscordBotService extends ListenerAdapter {
             case "gave_all":
             case "have":
             case "want":
-            case "canhelp":
+            case "can_help":
             case "report":
             case "admin_dropuserloot":
             case "admin_setuserloot":
