@@ -30,7 +30,7 @@ public class Loot {
     private float quantity;
 
     @CreationTimestamp
-    @Column(nullable = false, name = "when_created", updatable = false)
+    @Column(nullable = false, name = "created", updatable = false)
     private Instant whenCreated;
 
     @UpdateTimestamp

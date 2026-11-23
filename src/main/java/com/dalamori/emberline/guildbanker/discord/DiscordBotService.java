@@ -1,6 +1,7 @@
 package com.dalamori.emberline.guildbanker.discord;
 
 import com.dalamori.emberline.guildbanker.config.BotConfig;
+import com.dalamori.emberline.guildbanker.models.*;
 import com.dalamori.emberline.guildbanker.models.dao.BotUserDao;
 import com.dalamori.emberline.guildbanker.models.dao.LootDao;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,9 @@ import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.requests.restaction.CommandListUpdateAction;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -154,8 +158,17 @@ public class DiscordBotService extends ListenerAdapter {
 
         switch (cmd) {
             case "got":
+                got_command(event);
+                break;
+
             case "used":
+                used_command(event);
+                break;
+
             case "used_all":
+                usedAll_command(event);
+                break;
+
             case "request":
             case "took":
             case "took_all":
@@ -176,5 +189,188 @@ public class DiscordBotService extends ListenerAdapter {
             default:
                 event.reply("guildbanker bot is leaking logic!  Tell an officer.").queue();
         }
+    }
+
+    public void got_command(SlashCommandInteractionEvent event) {
+        Float quantity = null;
+        String lootName = null;
+        String reason = "";
+        try {
+            quantity = Float.parseFloat(event.getOption("quantity").getAsString());
+            lootName = event.getOption("loot_name").getAsString();
+            reason = event.getOption("reason").getAsString();
+        } catch (NullPointerException e) {
+            event.reply("GOT_COMMAND - Parse error! " + e.getMessage()).setEphemeral(true).queue();
+        }
+
+        event.deferReply().queue();
+
+        BotUser actor = findOrCreateUserBySnowflake(event.getUser().getId());
+
+        Optional<Loot> hasLoot = lootDao.findByNameAndHeldBy(lootName, actor.getSnowflake());
+        Loot lootItem;
+        if (hasLoot.isPresent()) {
+            // delta add
+            lootItem = hasLoot.get();
+
+
+            if (lootItem.getQuantity() < 0.0) {
+                event.getHook()
+                        .sendMessage("OK. This was something you had requested, grats!")
+                        .setEphemeral(true).queue();
+
+                lootItem.setQuantity(lootItem.getQuantity() + quantity);
+                logLoot(lootItem, LootLogType.CREATED, actor.getSnowflake(), reason);
+
+                if (lootItem.getQuantity() == 0.0) {
+                    lootDao.delete(lootItem);
+                } else {
+                    lootDao.save(lootItem);
+                }
+            } else {
+                lootItem.setQuantity(lootItem.getQuantity() + quantity);
+
+                logLoot(lootItem, LootLogType.CREATED, actor.getSnowflake(), reason);
+
+                lootDao.save(lootItem);
+
+                event.getHook()
+                        .sendMessage("OK. You now have " + lootItem.getQuantity() + " " + lootName + " total.")
+                        .setEphemeral(true).queue();
+            }
+        } else {
+            lootItem = new Loot();
+            lootItem.setName(lootName);
+            lootItem.setHeldBy(actor.getSnowflake());
+            lootItem.setQuantity(quantity);
+
+            logLoot(lootItem, LootLogType.CREATED, actor.getSnowflake(), reason);
+
+            lootDao.save(lootItem);
+
+            event.getHook()
+                    .sendMessage("OK.  You now have " + quantity + " " + lootName)
+                    .setEphemeral(true).queue();
+        }
+    }
+
+    public void used_command(SlashCommandInteractionEvent event) {
+        Float quantity = null;
+        String lootName = null;
+        String reason = "";
+        try {
+            quantity = Float.parseFloat(event.getOption("quantity").getAsString());
+            lootName = event.getOption("loot_name").getAsString();
+            reason = event.getOption("reason").getAsString();
+        } catch (NullPointerException e) {
+            event.reply("USED_COMMAND - Parse error! " + e.getMessage()).setEphemeral(true).queue();
+        }
+
+        event.deferReply().queue();
+
+        BotUser actor = findOrCreateUserBySnowflake(event.getUser().getId());
+
+        Optional<Loot> hasLoot = lootDao.findByNameAndHeldBy(lootName, actor.getSnowflake());
+        Loot lootItem;
+        if (hasLoot.isPresent()) {
+            // delta sub
+            lootItem = hasLoot.get();
+
+            if (lootItem.getQuantity() < quantity) {
+                event.getHook()
+                        .sendMessage("You don't have that many!  Are you trying to use " + config.getDiscordSlashCommandPrefix() + "used_all?")
+                        .setEphemeral(true).queue();
+            } else if (lootItem.getQuantity() + quantity == 0.0) {
+                event.getHook()
+                        .sendMessage("OK. You use the last of your " + lootName + ".")
+                        .setEphemeral(true).queue();
+
+                lootDao.delete(lootItem);
+            } else {
+                lootItem.setQuantity(lootItem.getQuantity() - quantity);
+
+                logLoot(lootItem, LootLogType.USED, actor.getSnowflake(), reason);
+
+                lootDao.save(lootItem);
+
+                event.getHook()
+                        .sendMessage("OK. You now have " + lootItem.getQuantity() + " " + lootName + " left.")
+                        .setEphemeral(true).queue();
+            }
+        } else {
+            event.getHook()
+                    .sendMessage("You don't have any " + lootName + " to begin with!")
+                    .setEphemeral(true).queue();
+        }
+    }
+
+    public void usedAll_command(SlashCommandInteractionEvent event) {
+        String lootName = null;
+        String reason = "";
+        try {
+            lootName = event.getOption("loot_name").getAsString();
+            reason = event.getOption("reason").getAsString();
+        } catch (NullPointerException e) {
+            event.reply("USED_ALL_COMMAND - Parse error! " + e.getMessage()).setEphemeral(true).queue();
+        }
+
+        event.deferReply().queue();
+
+        BotUser actor = findOrCreateUserBySnowflake(event.getUser().getId());
+
+        Optional<Loot> hasLoot = lootDao.findByNameAndHeldBy(lootName, actor.getSnowflake());
+        Loot lootItem;
+        if (hasLoot.isPresent()) {
+            // delta sub
+            lootItem = hasLoot.get();
+
+            if (lootItem.getQuantity() < 0.0) {
+                event.getHook()
+                        .sendMessage("OK. You cancel your request for " + lootName + ".")
+                        .setEphemeral(true).queue();
+
+                lootDao.delete(lootItem);
+            } else {
+                event.getHook()
+                        .sendMessage("OK. You now have no " + lootName + " left.")
+                        .setEphemeral(true).queue();
+
+                lootDao.delete(lootItem);
+            }
+        } else {
+            event.getHook()
+                    .sendMessage("You don't have any " + lootName + " to begin with!")
+                    .setEphemeral(true).queue();
+        }
+    }
+
+    private BotUser findOrCreateUserBySnowflake(String snowflake) {
+        Optional<BotUser> dbUserObj = buDao.findBySnowflake(snowflake);
+
+        if (dbUserObj.isPresent()) {
+            return dbUserObj.get();
+        }
+
+        BotUser newBotUser = new BotUser();
+        newBotUser.setSnowflake(snowflake);
+        newBotUser.setAuthLevel(BotUserAuthLevel.USER);
+
+        return buDao.save(newBotUser);
+    }
+
+    @Transactional
+    private LootLog logLoot(Loot loot, LootLogType type, String whoSaid, String reason) {
+        return null;
+        /*
+        LootLog logItem = new LootLog();
+        logItem.setLoot(loot);
+        logItem.setType(type);
+        logItem.setWhoSaid(whoSaid);
+        logItem.setReason(reason);
+
+        loot.getLootLogs().add(logItem);
+
+        return logItem;
+        */
     }
 }

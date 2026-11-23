@@ -8,7 +8,7 @@ import lombok.Setter;
 @Setter
 @Entity
 @Table(
-        name = "bot_user",
+        name = "bot_users",
         uniqueConstraints = {@UniqueConstraint(name = "uniq_snowflake", columnNames = {"snowflake"})}
 )
 public class BotUser {

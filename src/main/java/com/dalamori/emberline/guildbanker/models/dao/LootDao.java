@@ -9,4 +9,5 @@ import java.util.Optional;
 public interface LootDao extends CrudRepository<Loot, Long> {
     List<Loot> findByNameStartingWith(String prefix);
     List<Loot> findByHeldBy(String heldBy);
+    Optional<Loot> findByNameAndHeldBy(String name, String heldBy);
 }
