@@ -9,6 +9,11 @@ CREATE TABLE loot_items (
     CONSTRAINT `uniq_name_heldby` UNIQUE (`name`, `held_by`)
 );
 
+CREATE TABLE loot_autocomplete (
+    `name` VARCHAR(255),
+    CONSTRAINT `pk_name` PRIMARY KEY (`name`)
+);
+
 CREATE TABLE loot_logs (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `loot_id` BIGINT NOT NULL,
