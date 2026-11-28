@@ -17,7 +17,10 @@ public class BotUser {
     private Long id;
 
     @Column(nullable = false, name = "snowflake")
-    private String snowflake;
+    private Long snowflake;
+
+    @Column(nullable = false, name = "last_nick")
+    private String lastKnownNickname;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, name="auth_level")

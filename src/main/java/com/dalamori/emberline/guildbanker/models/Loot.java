@@ -38,7 +38,7 @@ public class Loot {
     private Instant lastSeen;
 
     @Column(nullable = false, name = "held_by")
-    private String heldBy;
+    private Long heldBy;
 
     @OneToMany(mappedBy = "loot", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<LootLog> lootLogs = new ArrayList<>();

@@ -17,6 +17,9 @@ public class BotConfig {
     @Value("${guildbanker.initialHelperMessage:Helper message not initialized}")
     private String helperMessage;
 
+    @Value("${guildbanker.disableAuthProtection:false}")
+    private Boolean disableAuthProtection;
+
     @Value("${discord.token:DISCORD_API_TOKEN_NOT_SET_IN_SECRET.PROPERTIES}")
     private String discordToken;
 

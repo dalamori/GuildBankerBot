@@ -23,7 +23,7 @@ public class LootLog {
     private LootLogType type;
 
     @Column(nullable = false, name = "who_said")
-    private String whoSaid;
+    private Long whoSaid;
 
     @Column(nullable = false, name="reason")
     private String reason;
